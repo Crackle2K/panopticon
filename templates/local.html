@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Imposter — Local{% endblock %}
+
+{% block content %}
+<div id="screen-setup" class="screen">
+  <h1>Im<span>post</span>er</h1>
+  <p class="subtitle">Pass-the-phone mode</p>
+
+  <div class="card">
+    <label>Players <span id="pc" style="color:var(--accent)">(0)</span></label>
+    <div class="row" style="margin-bottom:0">
+      <input id="pname" type="text" placeholder="Player name" maxlength="24"/>
+      <button class="btn btn-primary" id="add-btn" style="width:auto;padding:10px 18px">Add</button>
+    </div>
+    <div id="add-err" class="error"></div>
+    <hr class="divider"/>
+    <div class="player-list" id="player-list"></div>
+  </div>
+
+  <div class="card">
+    <label>Word pair <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--muted)">(leave blank for random)</span></label>
+    <div class="row">
+      <div>
+        <label>Normal word</label>
+        <input id="word" placeholder="e.g. Pizza"/>
+      </div>
+      <div>
+        <label>Imposter word</label>
+        <input id="iword" placeholder="e.g. Burger"/>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="start-btn">Start Game</button>
+  <div id="start-err" class="error" style="text-align:center;margin-top:8px"></div>
+  <a href="/" class="btn btn-ghost" style="margin-top:10px">← Back</a>
+</div>
+
+<!-- REVEAL -->
+<div id="screen-reveal" class="screen" style="display:none">
+  <h1>Im<span>post</span>er</h1>
+  <p class="subtitle">Don't show others!</p>
+  <div class="card" style="text-align:center">
+    <div style="font-size:1.4rem;font-weight:700;margin-bottom:18px" id="rv-name"></div>
+    <div id="rv-hidden">
+      <p style="color:var(--muted);margin-bottom:18px;font-size:0.9rem">Tap to reveal your role</p>
+      <button class="btn btn-primary" id="rv-show-btn">Show my word</button>
+    </div>
+    <div id="rv-shown" style="display:none">
+      <div class="word-box" id="rv-word"></div>
+      <div style="color:var(--muted);font-size:0.88rem;margin-bottom:20px" id="rv-hint"></div>
+      <button class="btn btn-ghost" id="rv-done-btn">Done — pass the phone</button>
+    </div>
+  </div>
+</div>
+
+<!-- VOTE -->
+<div id="screen-vote" class="screen" style="display:none">
+  <h1>Im<span>post</span>er</h1>
+  <p class="subtitle">Discuss, then vote.</p>
+  <div class="card">
+    <p style="color:var(--muted);font-size:0.9rem;margin-bottom:16px">Who is the imposter?</p>
+    <div class="vote-list" id="vote-list"></div>
+    <button class="btn btn-danger" id="vote-confirm-btn" disabled>Confirm Vote</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen" style="display:none">
+  <div class="card">
+    <div class="result-hero" id="res-emoji"></div>
+    <div class="result-title" id="res-title"></div>
+    <div class="result-sub" id="res-sub"></div>
+    <div class="reveal-info" id="res-info"></div>
+    <button class="btn btn-primary" id="play-again-btn">Play Again</button>
+    <a href="/" class="btn btn-ghost">Home</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PAIRS = [
+  ["Pizza","Burger"],["Cat","Dog"],["Coffee","Tea"],["Beach","Pool"],
+  ["Guitar","Violin"],["Summer","Spring"],["Apple","Pear"],["Castle","Mansion"],
+  ["Shark","Dolphin"],["Snow","Rain"],["Sword","Dagger"],["Detective","Spy"],
+  ["Lion","Tiger"],["Pilot","Astronaut"],["Nurse","Doctor"],["Chef","Baker"],
+  ["Football","Rugby"],["Cinema","Theatre"],["Vampire","Werewolf"],["Witch","Wizard"],
+];
+
+let players = [], word = '', iword = '', imposterIdx = -1, revealCursor = 0, vote = null;
+
+const $ = id => document.getElementById(id);
+const show = id => ['setup','reveal','vote','result'].forEach(s =>
+  $('screen-' + s).style.display = s === id ? '' : 'none');
+
+// Setup
+$('pname').addEventListener('keydown', e => e.key === 'Enter' && addPlayer());
+$('add-btn').addEventListener('click', addPlayer);
+
+function addPlayer() {
+  const name = $('pname').value.trim();
+  $('add-err').textContent = '';
+  if (!name) return;
+  if (players.includes(name)) { $('add-err').textContent = 'Name already added.'; return; }
+  players.push(name);
+  $('pname').value = '';
+  renderPlayers();
+}
+
+function removePlayer(i) { players.splice(i, 1); renderPlayers(); }
+
+function renderPlayers() {
+  $('pc').textContent = `(${players.length})`;
+  $('player-list').innerHTML = players.map((p, i) =>
+    `<div class="player-tag"><span>${p}</span><button onclick="removePlayer(${i})">✕</button></div>`
+  ).join('');
+}
+
+$('start-btn').addEventListener('click', () => {
+  $('start-err').textContent = '';
+  if (players.length < 3) { $('start-err').textContent = 'Need at least 3 players.'; return; }
+  let w = $('word').value.trim(), iw = $('iword').value.trim();
+  if (!w || !iw) { const p = PAIRS[Math.floor(Math.random() * PAIRS.length)]; w = w||p[0]; iw = iw||p[1]; }
+  word = w; iword = iw;
+  imposterIdx = Math.floor(Math.random() * players.length);
+  revealCursor = 0; vote = null;
+  show('reveal'); showReveal();
+});
+
+// Reveal
+function showReveal() {
+  $('rv-name').textContent = '👤 ' + players[revealCursor];
+  $('rv-hidden').style.display = ''; $('rv-shown').style.display = 'none';
+}
+
+$('rv-show-btn').addEventListener('click', () => {
+  const isImp = revealCursor === imposterIdx;
+  const box = $('rv-word');
+  if (isImp) {
+    box.textContent = '🕵️ You are the Imposter!';
+    box.className = 'word-box is-imposter';
+    $('rv-hint').textContent = `Your word: "${iword}" — blend in!`;
+  } else {
+    box.textContent = word;
+    box.className = 'word-box';
+    $('rv-hint').textContent = 'Remember this. Don\'t reveal it!';
+  }
+  $('rv-hidden').style.display = 'none'; $('rv-shown').style.display = '';
+});
+
+$('rv-done-btn').addEventListener('click', () => {
+  revealCursor++;
+  if (revealCursor < players.length) showReveal();
+  else showVote();
+});
+
+// Vote
+function showVote() {
+  vote = null;
+  show('vote');
+  $('vote-list').innerHTML = players.map((p, i) =>
+    `<button class="vote-btn" data-i="${i}" onclick="selectVote(${i})">${p}</button>`
+  ).join('');
+  $('vote-confirm-btn').disabled = true;
+}
+
+function selectVote(i) {
+  vote = i;
+  document.querySelectorAll('.vote-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelector(`.vote-btn[data-i="${i}"]`).classList.add('selected');
+  $('vote-confirm-btn').disabled = false;
+}
+
+$('vote-confirm-btn').addEventListener('click', showResult);
+
+// Result
+function showResult() {
+  show('result');
+  const correct = vote === imposterIdx;
+  const impName = players[imposterIdx], voteName = players[vote];
+  $('res-emoji').textContent = correct ? '🎉' : '😈';
+  $('res-title').textContent = correct ? 'Imposter Caught!' : 'Imposter Wins!';
+  $('res-sub').textContent = correct
+    ? `You voted out ${voteName} — the real imposter!`
+    : `You voted out ${voteName}, but the imposter was ${impName}!`;
+  $('res-info').innerHTML =
+    `Imposter: <span class="imp">${impName}</span><br>
+     Normal word: <strong>${word}</strong><br>
+     Imposter's word: <strong>${iword}</strong>`;
+}
+
+$('play-again-btn').addEventListener('click', () => {
+  $('word').value = ''; $('iword').value = '';
+  show('setup');
+});
+</script>
+{% endblock %}

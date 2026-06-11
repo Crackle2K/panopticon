@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Imposter — Online{% endblock %}
+
+{% block content %}
+<h1>Im<span>post</span>er</h1>
+<p class="subtitle">Play with friends on their own devices</p>
+
+<div id="view-choose">
+  <div class="card" style="cursor:pointer;border:2px solid transparent;transition:border-color .15s" id="btn-create"
+       onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='transparent'">
+    <div style="font-size:1.8rem;margin-bottom:8px">🎮</div>
+    <div style="font-weight:700;margin-bottom:4px">Create a Room</div>
+    <div style="color:var(--muted);font-size:0.88rem">Start a new game and invite friends</div>
+  </div>
+  <div class="card" style="cursor:pointer;border:2px solid transparent;transition:border-color .15s" id="btn-join"
+       onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='transparent'">
+    <div style="font-size:1.8rem;margin-bottom:8px">🔑</div>
+    <div style="font-weight:700;margin-bottom:4px">Join a Room</div>
+    <div style="color:var(--muted);font-size:0.88rem">Enter a room code to join</div>
+  </div>
+  <a href="/" class="btn btn-ghost" style="margin-top:4px">← Back</a>
+</div>
+
+<div id="view-create" style="display:none">
+  <div class="card">
+    <label>Your name</label>
+    <input id="create-name" type="text" placeholder="Enter your name" maxlength="24"/>
+    <div id="create-err" class="error"></div>
+  </div>
+  <button class="btn btn-primary" id="create-btn">Create Room</button>
+  <button class="btn btn-ghost" id="create-back">← Back</button>
+</div>
+
+<div id="view-join" style="display:none">
+  <div class="card">
+    <label>Room code</label>
+    <input id="join-code" type="text" placeholder="e.g. ABCDEF" maxlength="6"
+           style="text-transform:uppercase;letter-spacing:4px;font-size:1.2rem;font-weight:700"/>
+    <hr class="divider"/>
+    <label>Your name</label>
+    <input id="join-name" type="text" placeholder="Enter your name" maxlength="24"/>
+    <div id="join-err" class="error"></div>
+  </div>
+  <button class="btn btn-primary" id="join-btn">Join Room</button>
+  <button class="btn btn-ghost" id="join-back">← Back</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const prefillCode = {{ prefill_code | tojson }};
+
+function show(id) {
+  ['choose','create','join'].forEach(v =>
+    document.getElementById('view-' + v).style.display = v === id ? '' : 'none');
+}
+
+document.getElementById('btn-create').addEventListener('click', () => show('create'));
+document.getElementById('btn-join').addEventListener('click', () => {
+  show('join');
+  if (prefillCode) {
+    const el = document.getElementById('join-code');
+    el.value = prefillCode.toUpperCase();
+  }
+});
+document.getElementById('create-back').addEventListener('click', () => show('choose'));
+document.getElementById('join-back').addEventListener('click', () => show('choose'));
+
+// Persistent player ID
+function getOrCreatePlayerId() {
+  let id = localStorage.getItem('imposter_player_id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('imposter_player_id', id);
+  }
+  return id;
+}
+
+// Create room
+document.getElementById('create-btn').addEventListener('click', async () => {
+  const name = document.getElementById('create-name').value.trim();
+  const errEl = document.getElementById('create-err');
+  errEl.textContent = '';
+  if (!name) { errEl.textContent = 'Enter your name.'; return; }
+
+  const btn = document.getElementById('create-btn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+
+  const playerId = getOrCreatePlayerId();
+  try {
+    const res = await fetch('/api/rooms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: playerId, player_name: name }),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Something went wrong.'; return; }
+
+    localStorage.setItem('imposter_name_' + data.code, name);
+    localStorage.setItem('imposter_room_' + data.code, data.room_id);
+    window.location.href = '/room/' + data.code;
+  } catch (e) {
+    errEl.textContent = 'Network error. Try again.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Create Room';
+  }
+});
+
+// Join room
+document.getElementById('join-code').addEventListener('input', function() {
+  this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+});
+document.getElementById('join-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('join-btn').click();
+});
+
+document.getElementById('join-btn').addEventListener('click', async () => {
+  const code = document.getElementById('join-code').value.trim().toUpperCase();
+  const name = document.getElementById('join-name').value.trim();
+  const errEl = document.getElementById('join-err');
+  errEl.textContent = '';
+  if (!code || code.length !== 6) { errEl.textContent = 'Enter a 6-letter room code.'; return; }
+  if (!name) { errEl.textContent = 'Enter your name.'; return; }
+
+  const btn = document.getElementById('join-btn');
+  btn.disabled = true; btn.textContent = 'Joining…';
+
+  const playerId = getOrCreatePlayerId();
+  try {
+    const res = await fetch(`/api/rooms/${code}/join`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_id: playerId, player_name: name }),
+    });
+    const data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Something went wrong.'; return; }
+
+    localStorage.setItem('imposter_name_' + code, name);
+    localStorage.setItem('imposter_room_' + code, data.room_id);
+    window.location.href = '/room/' + code;
+  } catch (e) {
+    errEl.textContent = 'Network error. Try again.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Join Room';
+  }
+});
+
+// If prefill code given, go straight to join view
+if (prefillCode) show('join'); else show('choose');
+</script>
+{% endblock %}
