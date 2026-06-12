@@ -1,15 +1,7 @@
-const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const fs = require('fs');
-require('dotenv').config();
 
 let mainWindow;
-let spotifyAccessToken = null;
-let spotifyRefreshToken = null;
-
-const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
-const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
-const REDIRECT_URI = 'http://localhost:3000/callback';
 
 function createWindow() {
   const { screen } = require('electron');
@@ -18,8 +10,12 @@ function createWindow() {
 
   mainWindow = new BrowserWindow({
     width: 400,
-    height: 250,
-    x: Math.floor(width / 2) - 200,
+    height: 50,
+    minWidth: 400,
+    minHeight: 50,
+    maxWidth: 400,
+    maxHeight: 50,
+    x: Math.floor(width / 2) - 250,
     y: 20,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -30,77 +26,60 @@ function createWindow() {
     transparent: true,
     alwaysOnTop: true,
     skipTaskbar: true,
+    resizable: false,
+    roundedCorners: true,
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 }
 
-async function getSpotifyCurrentTrack() {
-  if (!spotifyAccessToken) return null;
-
+ipcMain.handle('get-weather', async () => {
   try {
     const fetch = (await import('node-fetch')).default;
-    const response = await fetch('https://api.spotify.com/v1/me/player/currently-playing', {
-      headers: {
-        'Authorization': `Bearer ${spotifyAccessToken}`,
-      },
-    });
 
-    if (response.status === 401) {
-      spotifyAccessToken = null;
-      return null;
-    }
+    const geoRes = await fetch('http://ip-api.com/json/');
+    const geo = await geoRes.json();
 
-    if (!response.ok || response.status === 204) return null;
+    if (geo.status !== 'success') return null;
 
-    const data = await response.json();
-    if (!data.item) return null;
+    const { lat, lon, city } = geo;
 
-    return {
-      name: data.item.name,
-      artist: data.item.artists.map(a => a.name).join(', '),
-      uri: data.item.uri,
-    };
+    const weatherRes = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&temperature_unit=celsius`
+    );
+    const weather = await weatherRes.json();
+
+    const temp = Math.round(weather.current.temperature_2m);
+    const code = weather.current.weathercode;
+
+    const category = weatherCodeToCategory(code);
+
+    return { temp, category };
   } catch (error) {
-    console.error('Error fetching Spotify track:', error);
+    console.error('Error fetching weather:', error);
     return null;
   }
+});
+
+function weatherCodeToCategory(code) {
+  if (code === 0) return 'clear';
+  if (code <= 2) return 'partly-cloudy';
+  if (code === 3) return 'cloudy';
+  if (code <= 49) return 'fog';
+  if (code <= 67) return 'rain';
+  if (code <= 77) return 'snow';
+  if (code <= 82) return 'rain';
+  if (code <= 86) return 'snow';
+  if (code <= 99) return 'thunderstorm';
+  return 'clear';
 }
-
-ipcMain.on('move-window', (event, { x, y }) => {
-  mainWindow.setPosition(x, y);
-});
-
-ipcMain.handle('get-window-position', async () => {
-  const [x, y] = mainWindow.getPosition();
-  return [x, y];
-});
-
-ipcMain.handle('get-spotify-track', async () => {
-  return await getSpotifyCurrentTrack();
-});
-
-ipcMain.handle('open-spotify-auth', async () => {
-  if (!CLIENT_ID || !CLIENT_SECRET) {
-    shell.openExternal('https://developer.spotify.com/dashboard/applications');
-    return;
-  }
-
-  const scopes = 'user-read-currently-playing';
-  const authUrl = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(scopes)}`;
-  shell.openExternal(authUrl);
-});
 
 app.on('ready', createWindow);
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('activate', () => {
-  if (mainWindow === null) {
-    createWindow();
-  }
+  if (mainWindow === null) createWindow();
 });
