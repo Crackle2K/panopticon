@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 
 let mainWindow;
@@ -9,9 +9,9 @@ function createWindow() {
   const { width } = primaryDisplay.bounds;
 
   mainWindow = new BrowserWindow({
-    width: 200,
-    height: 200,
-    x: Math.floor(width / 2) - 100,
+    width: 400,
+    height: 250,
+    x: Math.floor(width / 2) - 200,
     y: 20,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -26,6 +26,15 @@ function createWindow() {
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 }
+
+ipcMain.on('move-window', (event, { x, y }) => {
+  mainWindow.setPosition(x, y);
+});
+
+ipcMain.handle('get-window-position', async () => {
+  const [x, y] = mainWindow.getPosition();
+  return [x, y];
+});
 
 app.on('ready', createWindow);
 

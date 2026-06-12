@@ -1,5 +1,6 @@
-const { contextBridge } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
-  // We can add IPC calls here later
+  moveWindow: (x, y) => ipcRenderer.send('move-window', { x, y }),
+  getWindowPosition: (callback) => ipcRenderer.invoke('get-window-position').then(callback),
 });

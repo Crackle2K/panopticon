@@ -8,5 +8,38 @@
 </head>
 <body>
   <div class="island">hi</div>
+
+  <script>
+    const island = document.querySelector('.island');
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let windowX = 0;
+    let windowY = 0;
+
+    island.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.screenX;
+      startY = e.screenY;
+
+      window.electron.getWindowPosition((x, y) => {
+        windowX = x;
+        windowY = y;
+      });
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+
+      const deltaX = e.screenX - startX;
+      const deltaY = e.screenY - startY;
+
+      window.electron.moveWindow(windowX + deltaX, windowY + deltaY);
+    });
+
+    document.addEventListener('mouseup', () => {
+      isDragging = false;
+    });
+  </script>
 </body>
 </html>
