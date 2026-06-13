@@ -1,0 +1,27 @@
+# Default: normalise line endings to LF in the repo, check out as-is
+* text=auto eol=lf
+
+# Source files
+*.js    text eol=lf
+*.html  text eol=lf
+*.css   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+
+# Environment / config templates
+.env.example text eol=lf
+
+# Plain text
+LICENSE text eol=lf
+
+# Binary — do not diff or mangle
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.ico   binary
+*.pak   binary
+*.bin   binary
+*.dll   binary
+*.exe   binary
+*.asar  binary
