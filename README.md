@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🏝️ Oasis
+# Oasis
 
-**A Dynamic Island for Windows — live weather in a floating pill.**
+**A Dynamic Island for Windows - live weather in a floating pill.**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0-brightgreen.svg)](package.json)
@@ -18,21 +18,21 @@
 
 ---
 
-Oasis is a lightweight Electron app that pins a sleek, pill-shaped weather widget to the top of your screen — inspired by the iPhone Dynamic Island. It shows your current temperature and weather condition at a glance, with no taskbar clutter, no window chrome, and six built-in themes.
+Oasis is a lightweight Electron app that pins a sleek, pill-shaped weather widget to the top of your screen - inspired by the iPhone Dynamic Island. It shows your current temperature and weather condition at a glance, with no taskbar clutter, no window chrome, and six built-in themes.
 
 ## Features
 
-- **Live weather** — temperature, feels-like, humidity, and wind speed; fetched from your IP location with no API key
-- **Expandable details** — click ˅ to expand into a card showing city, feels-like, humidity, and wind; collapses back to a pill
-- **Day / night icons** — shows a crescent moon at night for clear skies, sun during the day
-- **Animated icons** — sun rays rotate, raindrops fall, snow drifts, lightning flickers, fog slides
-- **6 themes** — Dark, Glass, Neon, Light, Nord, Aurora; switchable live via gear icon or right-click
-- **Celsius / Fahrenheit** — toggle units; preference persisted between sessions
-- **Position persistence** — remembers where you dragged the island and restores it on next launch
-- **Launch at startup** — optional auto-start via the settings menu
-- **Always-on-top** — floats above all other windows without stealing focus
-- **Frameless & transparent** — only the pill is visible; no borders, no title bar
-- **Auto-refresh** — weather updates every 10 minutes automatically
+- **Live weather** - temperature, feels-like, humidity, and wind speed; fetched from your IP location with no API key
+- **Expandable details** - click v to expand into a card showing city, feels-like, humidity, and wind; collapses back to a pill
+- **Day / night icons** - shows a crescent moon at night for clear skies, sun during the day
+- **Animated icons** - sun rays rotate, raindrops fall, snow drifts, lightning flickers, fog slides
+- **6 themes** - Dark, Glass, Neon, Light, Nord, Aurora; switchable live via gear icon or right-click
+- **Celsius / Fahrenheit** - toggle units; preference persisted between sessions
+- **Position persistence** - remembers where you dragged the island and restores it on next launch
+- **Launch at startup** - optional auto-start via the settings menu
+- **Always-on-top** - floats above all other windows without stealing focus
+- **Frameless & transparent** - only the pill is visible; no borders, no title bar
+- **Auto-refresh** - weather updates every 10 minutes automatically
 
 ## Themes
 
@@ -45,7 +45,7 @@ Oasis is a lightweight Electron app that pins a sleek, pill-shaped weather widge
 | **Nord** | Deep blue-grey from the [Nord](https://www.nordtheme.com/) colour palette. |
 | **Aurora** | Purple-to-pink gradient. Bold and vibrant. |
 
-Switch themes at any time: **right-click the island → Theme**.
+Switch themes at any time: **right-click the island -> Theme**.
 
 ## Getting Started
 
@@ -79,13 +79,13 @@ npm run dev
 | Action | How |
 |--------|-----|
 | **Reposition** | Click and drag the island |
-| **Expand / collapse** | Click the ˅ chevron (left side) |
-| **Switch theme** | ⚙ gear icon or right-click → Theme |
-| **Change unit** | ⚙ gear icon or right-click → Temperature Unit |
-| **Toggle startup** | ⚙ gear icon or right-click → Launch at Startup |
-| **Quit** | ⚙ gear icon or right-click → Quit Oasis |
+| **Expand / collapse** | Click the v chevron (left side) |
+| **Switch theme** | Gear icon or right-click -> Theme |
+| **Change unit** | Gear icon or right-click -> Temperature Unit |
+| **Toggle startup** | Gear icon or right-click -> Launch at Startup |
+| **Quit** | Gear icon or right-click -> Quit Oasis |
 
-All preferences — theme, temperature unit, window position — are saved automatically and restored on every launch.
+All preferences - theme, temperature unit, window position - are saved automatically and restored on every launch.
 
 ## Configuration
 
@@ -117,25 +117,25 @@ You can edit this file directly while the app is not running:
 App launch
   └─ Reads config.json (or uses defaults)
   └─ Restores last window position (windowX / windowY)
-  └─ Renders transparent frameless always-on-top window (400 × 210 px)
+  └─ Renders transparent frameless always-on-top window (400 x 210 px)
 
 Weather fetch (on load + every 10 min)
-  ├─ ip-api.com       →  lat, lon, city name
-  └─ open-meteo.com   →  temperature, apparent_temperature, weathercode,
+  ├─ ip-api.com       ->  lat, lon, city name
+  └─ open-meteo.com   ->  temperature, apparent_temperature, weathercode,
                           relativehumidity_2m, windspeed_10m, is_day
         └─ weathercode mapped to: clear, partly-cloudy, cloudy, fog, rain, snow, thunderstorm
-        └─ is_day=0 + clear  →  night-clear (crescent moon icon)
+        └─ is_day=0 + clear  ->  night-clear (crescent moon icon)
 
-Expand / collapse (˅ button)
-  └─ CSS class toggle on .island  →  height 64px ↔ 185px
-  └─ pill border-radius ↔ rounded-rect border-radius (smooth transition)
+Expand / collapse (v button)
+  └─ CSS class toggle on .island  ->  height 64px <-> 185px
+  └─ pill border-radius <-> rounded-rect border-radius (smooth transition)
   └─ city, feels-like, humidity, wind fade in
 
 Settings (gear button or right-click)
   └─ Electron context menu
-        ├─ Theme         →  CSS class on .island  +  saved to config.json
-        ├─ Unit          →  client-side °C/°F conversion  +  saved to config.json
-        └─ Startup       →  app.setLoginItemSettings()
+        ├─ Theme         ->  CSS class on .island  +  saved to config.json
+        ├─ Unit          ->  client-side C/F conversion  +  saved to config.json
+        └─ Startup       ->  app.setLoginItemSettings()
 
 Window move
   └─ Saves new x, y to config.json automatically
@@ -159,10 +159,10 @@ Both APIs are free and require no authentication.
 
 ```
 oasis/
-├── main.js          # Electron main process — window, IPC, context menu, config
-├── preload.js       # Context bridge (IPC → renderer API)
+├── main.js          # Electron main process - window, IPC, context menu, config
+├── preload.js       # Context bridge (IPC -> renderer API)
 ├── src/
-│   ├── index.html   # Renderer — weather display, theme application
+│   ├── index.html   # Renderer - weather display, theme application
 │   └── styles.css   # Themes and layout
 ├── .env.example     # Environment variable reference
 └── package.json
@@ -172,10 +172,10 @@ oasis/
 
 1. Fork the repo and create a feature branch
 2. Make your changes
-3. Open a pull request — describe what you changed and why
+3. Open a pull request - describe what you changed and why
 
 Bug reports and feature requests are welcome via [GitHub Issues](https://github.com/Crackle2K/oasis/issues).
 
 ## License
 
-[MIT](LICENSE) — © 2026 Dinesh Sinnathamby
+[MIT](LICENSE) - © 2026 Dinesh Sinnathamby
