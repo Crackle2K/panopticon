@@ -12,7 +12,7 @@ html, body {
 
 body {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   background: transparent;
 }
@@ -20,58 +20,41 @@ body {
 /* ── Base island ── */
 .island {
   --text: #fff;
-  --muted: #555;
+  --muted: rgba(255, 255, 255, 0.45);
+  --stat-bg: rgba(255, 255, 255, 0.08);
+  --divider: rgba(255, 255, 255, 0.12);
 
-  position: relative;
-  width: 100%;
-  height: 100%;
+  width: 600px;
+  height: 280px;
   background: #000;
   border-radius: 200px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
-  cursor: move;
   user-select: none;
   overflow: hidden;
   -webkit-app-region: drag;
-  transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
+  transition:
+    height         0.48s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius  0.48s cubic-bezier(0.4, 0, 0.2, 1),
+    background     0.35s ease,
+    box-shadow     0.35s ease,
+    border-color   0.35s ease;
 }
 
-/* ── Gear / settings button ── */
-.settings-btn {
-  position: absolute;
-  right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  padding: 6px;
-  cursor: pointer;
-  color: var(--text);
-  opacity: 0.35;
-  transition: opacity 0.2s ease;
-  -webkit-app-region: no-drag;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
+.island.expanded {
+  height: 560px;
+  border-radius: 48px;
 }
 
-.settings-btn:hover {
-  opacity: 1;
-}
+/* ── Themes ── */
 
-.settings-btn svg {
-  width: 26px;
-  height: 26px;
-  display: block;
-}
-
-/* ── Glass ── */
 .island.theme-glass {
   --text: #fff;
-  --muted: rgba(255, 255, 255, 0.35);
+  --muted: rgba(255, 255, 255, 0.4);
+  --stat-bg: rgba(255, 255, 255, 0.1);
+  --divider: rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.12);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -79,10 +62,11 @@ body {
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
 }
 
-/* ── Neon ── */
 .island.theme-neon {
   --text: #00f5ff;
-  --muted: #005f63;
+  --muted: #006b70;
+  --stat-bg: rgba(0, 245, 255, 0.07);
+  --divider: rgba(0, 245, 255, 0.15);
   background: #070b0d;
   border: 1px solid rgba(0, 245, 255, 0.25);
   box-shadow: 0 0 28px rgba(0, 245, 255, 0.12), inset 0 0 28px rgba(0, 245, 255, 0.03);
@@ -96,10 +80,11 @@ body {
   filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.8));
 }
 
-/* ── Light ── */
 .island.theme-light {
   --text: #1a1a1a;
-  --muted: #aaa;
+  --muted: #999;
+  --stat-bg: rgba(0, 0, 0, 0.06);
+  --divider: rgba(0, 0, 0, 0.1);
   background: #efefef;
 }
 
@@ -107,46 +92,242 @@ body {
   filter: brightness(0);
 }
 
-/* ── Nord ── */
 .island.theme-nord {
   --text: #eceff4;
   --muted: #4c566a;
+  --stat-bg: rgba(236, 239, 244, 0.07);
+  --divider: rgba(236, 239, 244, 0.12);
   background: #2e3440;
 }
 
-/* ── Aurora ── */
 .island.theme-aurora {
   --text: #fff;
-  --muted: rgba(255, 255, 255, 0.45);
+  --muted: rgba(255, 255, 255, 0.5);
+  --stat-bg: rgba(255, 255, 255, 0.15);
+  --divider: rgba(255, 255, 255, 0.2);
   background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
 }
 
-/* ── Shared content ── */
+/* ── Main strip (always visible, 64px tall) ── */
+.island-main {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Expand + settings buttons ── */
+.expand-btn,
+.settings-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--text);
+  opacity: 0.7;
+  transition: opacity 0.18s ease;
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.expand-btn { left: 14px; }
+.settings-btn { right: 14px; }
+
+.expand-btn:hover,
+.settings-btn:hover { opacity: 1; }
+
+.expand-btn svg,
+.settings-btn svg {
+  width: 36px;
+  height: 36px;
+  display: block;
+}
+
+.expand-btn svg {
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.island.expanded .expand-btn svg {
+  transform: rotate(180deg);
+}
+
+/* ── Weather display ── */
 .weather {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .icon svg {
-  width: 100px;
-  height: 100px;
+  width: 150px;
+  height: 150px;
   display: block;
 }
 
 .temp {
-  font-size: 110px;
+  font-size: 160px;
   font-weight: 800;
   color: var(--text);
   line-height: 1;
-  letter-spacing: -5px;
+  letter-spacing: -7px;
+  transition: color 0.35s ease;
 }
 
 .loading {
-  font-size: 110px;
+  font-size: 160px;
   font-weight: 800;
   color: var(--muted);
-  letter-spacing: -5px;
+  letter-spacing: -7px;
+}
+
+/* ── Expanded details panel ── */
+.island-details {
+  width: 100%;
+  padding: 2px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  -webkit-app-region: no-drag;
+}
+
+.island.expanded .island-details {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition-delay: 0.24s;
+}
+
+.city-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 380px;
+}
+
+.details-divider {
+  width: 100%;
+  height: 1px;
+  background: var(--divider);
+}
+
+.stats {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: var(--stat-bg);
+  border-radius: 16px;
+  padding: 14px 10px;
+}
+
+.stat-val {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ── Icon animations ── */
+
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rain-fall {
+  0%   { transform: translateY(0);   opacity: 1; }
+  75%  { transform: translateY(6px); opacity: 0; }
+  100% { transform: translateY(6px); opacity: 0; }
+}
+
+@keyframes snow-drift {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(5px); opacity: 0.7; }
+}
+
+@keyframes lightning-flicker {
+  0%, 85%, 100% { opacity: 1; }
+  87%, 96%      { opacity: 0.1; }
+  91%, 93%      { opacity: 1; }
+}
+
+@keyframes fog-slide {
+  0%, 100% { transform: translateX(0);   opacity: 0.9; }
+  50%       { transform: translateX(5px); opacity: 0.6; }
+}
+
+@keyframes moon-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(200,220,255,0.25)); }
+  50%       { filter: drop-shadow(0 0 10px rgba(200,220,255,0.55)); }
+}
+
+/* Clear — spin the rays group */
+.icon-clear svg .sun-rays {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: spin-slow 15s linear infinite;
+}
+
+/* Rain — staggered drip on each line */
+.icon-rain svg .rain-d1 { animation: rain-fall 1.5s ease-in infinite; }
+.icon-rain svg .rain-d2 { animation: rain-fall 1.5s ease-in 0.5s infinite; }
+.icon-rain svg .rain-d3 { animation: rain-fall 1.5s ease-in 1.0s infinite; }
+
+/* Snow — gentle bob */
+.icon-snow svg .snowflakes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: snow-drift 3s ease-in-out infinite;
+}
+
+/* Thunderstorm — lightning flicker */
+.icon-thunderstorm svg .bolt {
+  animation: lightning-flicker 4s ease-in-out infinite;
+}
+
+/* Fog — slow drift */
+.icon-fog svg .fog-lines {
+  animation: fog-slide 3.5s ease-in-out infinite;
+}
+
+/* Night clear — moon glow */
+.icon-night-clear svg {
+  animation: moon-pulse 4s ease-in-out infinite;
 }

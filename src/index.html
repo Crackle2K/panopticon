@@ -4,119 +4,205 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Oasis</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="island" id="island">
-    <div class="weather" id="weather">
-      <div class="loading">Loading...</div>
+
+    <!-- Always-visible strip -->
+    <div class="island-main">
+      <button class="expand-btn" id="expand-btn" title="Details">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      <div class="weather" id="weather">
+        <div class="loading">Loading...</div>
+      </div>
+
+      <button class="settings-btn" id="settings-btn" title="Settings">
+        <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0
+            01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947
+            2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836
+            1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6
+            1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734
+            2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6
+            0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532
+            1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+        </svg>
+      </button>
     </div>
-    <button class="settings-btn" id="settings-btn" title="Settings">
-      <svg viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
-      </svg>
-    </button>
+
+    <!-- Expanded details (hidden until toggled) -->
+    <div class="island-details" id="details">
+      <div class="city-name" id="city-name">—</div>
+      <div class="details-divider"></div>
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-val" id="stat-feels">—</span>
+          <span class="stat-label">Feels like</span>
+        </div>
+        <div class="stat">
+          <span class="stat-val" id="stat-humidity">—</span>
+          <span class="stat-label">Humidity</span>
+        </div>
+        <div class="stat">
+          <span class="stat-val" id="stat-wind">—</span>
+          <span class="stat-label">Wind</span>
+        </div>
+      </div>
+    </div>
+
   </div>
 
   <script>
-    const islandEl = document.getElementById('island');
-    const weatherEl = document.getElementById('weather');
+    const islandEl   = document.getElementById('island');
+    const weatherEl  = document.getElementById('weather');
+    const cityEl     = document.getElementById('city-name');
+    const feelsEl    = document.getElementById('stat-feels');
+    const humidityEl = document.getElementById('stat-humidity');
+    const windEl     = document.getElementById('stat-wind');
 
-    let config = { theme: 'dark', temperatureUnit: 'celsius' };
+    let config          = { theme: 'dark', temperatureUnit: 'celsius' };
     let lastWeatherData = null;
+    let isExpanded      = false;
+
+    // ── SVG icon library ─────────────────────────────────────────────────
 
     const icons = {
-      'clear': `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
-        <circle cx="30" cy="30" r="11" fill="white"/>
-        <g stroke="white" stroke-width="2.5" stroke-linecap="round">
-          <line x1="30" y1="4" x2="30" y2="13"/>
-          <line x1="30" y1="47" x2="30" y2="56"/>
-          <line x1="4" y1="30" x2="13" y2="30"/>
-          <line x1="47" y1="30" x2="56" y2="30"/>
-          <line x1="11.5" y1="11.5" x2="18" y2="18"/>
-          <line x1="42" y1="42" x2="48.5" y2="48.5"/>
-          <line x1="48.5" y1="11.5" x2="42" y2="18"/>
-          <line x1="18" y1="42" x2="11.5" y2="48.5"/>
-        </g>
-      </svg>`,
+      'clear': `
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <circle cx="30" cy="30" r="11" fill="white"/>
+          <g class="sun-rays" stroke="white" stroke-width="2.5" stroke-linecap="round">
+            <line x1="30" y1="4"    x2="30" y2="13"/>
+            <line x1="30" y1="47"   x2="30" y2="56"/>
+            <line x1="4"  y1="30"   x2="13" y2="30"/>
+            <line x1="47" y1="30"   x2="56" y2="30"/>
+            <line x1="11.5" y1="11.5" x2="18" y2="18"/>
+            <line x1="42"   y1="42"   x2="48.5" y2="48.5"/>
+            <line x1="48.5" y1="11.5" x2="42" y2="18"/>
+            <line x1="18"   y1="42"   x2="11.5" y2="48.5"/>
+          </g>
+        </svg>`,
 
-      'partly-cloudy': `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
-        <circle cx="21" cy="21" r="8" fill="white" opacity="0.7"/>
-        <g stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7">
-          <line x1="21" y1="7" x2="21" y2="11"/>
-          <line x1="21" y1="31" x2="21" y2="35"/>
-          <line x1="7" y1="21" x2="11" y2="21"/>
-          <line x1="31" y1="21" x2="35" y2="21"/>
-          <line x1="11.5" y1="11.5" x2="14.5" y2="14.5"/>
-          <line x1="27.5" y1="27.5" x2="30.5" y2="30.5"/>
-          <line x1="30.5" y1="11.5" x2="27.5" y2="14.5"/>
-          <line x1="14.5" y1="27.5" x2="11.5" y2="30.5"/>
-        </g>
-        <path d="M48 46H28a10 10 0 010-20 10 10 0 0119.2 4A8 8 0 1148 46z" fill="white"/>
-      </svg>`,
+      'night-clear': `
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <path d="M36 10a20 20 0 11-20 30A15 15 0 0036 10z" fill="white"/>
+          <circle cx="42" cy="14" r="2" fill="white" opacity="0.5"/>
+          <circle cx="50" cy="22" r="1.5" fill="white" opacity="0.4"/>
+          <circle cx="46" cy="8"  r="1"   fill="white" opacity="0.3"/>
+        </svg>`,
 
-      'cloudy': `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
-        <path d="M46 42H20a13 13 0 010-26 13 13 0 0125.5 5.6A10 10 0 1146 42z" fill="white"/>
-      </svg>`,
+      'partly-cloudy': `
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <circle cx="21" cy="21" r="8" fill="white" opacity="0.7"/>
+          <g stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.7">
+            <line x1="21" y1="7"    x2="21" y2="11"/>
+            <line x1="21" y1="31"   x2="21" y2="35"/>
+            <line x1="7"  y1="21"   x2="11" y2="21"/>
+            <line x1="31" y1="21"   x2="35" y2="21"/>
+            <line x1="11.5" y1="11.5" x2="14.5" y2="14.5"/>
+            <line x1="27.5" y1="27.5" x2="30.5" y2="30.5"/>
+            <line x1="30.5" y1="11.5" x2="27.5" y2="14.5"/>
+            <line x1="14.5" y1="27.5" x2="11.5" y2="30.5"/>
+          </g>
+          <path d="M48 46H28a10 10 0 010-20 10 10 0 0119.2 4A8 8 0 1148 46z" fill="white"/>
+        </svg>`,
 
-      'fog': `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="white" stroke-linecap="round" stroke-width="2.5">
-        <line x1="8" y1="20" x2="52" y2="20"/>
-        <line x1="8" y1="30" x2="52" y2="30"/>
-        <line x1="14" y1="40" x2="46" y2="40"/>
-      </svg>`,
+      'cloudy': `
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <path d="M46 42H20a13 13 0 010-26 13 13 0 0125.5 5.6A10 10 0 1146 42z" fill="white"/>
+        </svg>`,
 
-      'rain': `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
-        <path d="M46 36H22a11 11 0 010-22 11 11 0 0121.5 4.8A9 9 0 1146 36z" fill="white"/>
-        <g stroke="white" stroke-width="2.5" stroke-linecap="round">
-          <line x1="22" y1="43" x2="19" y2="53"/>
-          <line x1="31" y1="43" x2="28" y2="53"/>
-          <line x1="40" y1="43" x2="37" y2="53"/>
-        </g>
-      </svg>`,
+      'fog': `
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <g class="fog-lines" stroke="white" stroke-linecap="round" stroke-width="2.5">
+            <line x1="8"  y1="20" x2="52" y2="20"/>
+            <line x1="8"  y1="30" x2="52" y2="30"/>
+            <line x1="14" y1="40" x2="46" y2="40"/>
+          </g>
+        </svg>`,
 
-      'snow': `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
-        <path d="M46 36H22a11 11 0 010-22 11 11 0 0121.5 4.8A9 9 0 1146 36z" fill="white"/>
-        <g fill="white">
-          <circle cx="22" cy="47" r="3"/>
-          <circle cx="31" cy="47" r="3"/>
-          <circle cx="40" cy="47" r="3"/>
-          <circle cx="26.5" cy="55" r="3"/>
-          <circle cx="35.5" cy="55" r="3"/>
-        </g>
-      </svg>`,
+      'rain': `
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <path d="M46 36H22a11 11 0 010-22 11 11 0 0121.5 4.8A9 9 0 1146 36z" fill="white"/>
+          <line class="rain-d1" x1="22" y1="43" x2="19" y2="53" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <line class="rain-d2" x1="31" y1="43" x2="28" y2="53" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+          <line class="rain-d3" x1="40" y1="43" x2="37" y2="53" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>`,
 
-      'thunderstorm': `<svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
-        <path d="M46 34H22a11 11 0 010-22 11 11 0 0121.5 4.8A9 9 0 1146 34z" fill="white"/>
-        <polyline points="35,36 27,48 33,48 25,60" stroke="#FFD60A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>`,
+      'snow': `
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <path d="M46 36H22a11 11 0 010-22 11 11 0 0121.5 4.8A9 9 0 1146 36z" fill="white"/>
+          <g class="snowflakes" fill="white">
+            <circle cx="22"  cy="47" r="3"/>
+            <circle cx="31"  cy="47" r="3"/>
+            <circle cx="40"  cy="47" r="3"/>
+            <circle cx="26.5" cy="55" r="3"/>
+            <circle cx="35.5" cy="55" r="3"/>
+          </g>
+        </svg>`,
+
+      'thunderstorm': `
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" fill="none">
+          <path d="M46 34H22a11 11 0 010-22 11 11 0 0121.5 4.8A9 9 0 1146 34z" fill="white"/>
+          <polyline class="bolt" points="35,36 27,48 33,48 25,60"
+            stroke="#FFD60A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>`,
     };
+
+    // ── Helpers ───────────────────────────────────────────────────────────
+
+    function iconKey(category, isDay) {
+      if (category === 'clear' && !isDay) return 'night-clear';
+      return category;
+    }
+
+    function formatTemp(celsius) {
+      if (config.temperatureUnit === 'fahrenheit') {
+        return Math.round(celsius * 9 / 5 + 32) + '°';
+      }
+      return celsius + '°';
+    }
+
+    // ── Render ────────────────────────────────────────────────────────────
 
     function applyTheme(newConfig) {
       config = newConfig;
+      // Preserve expanded class
+      const wasExpanded = islandEl.classList.contains('expanded');
       islandEl.className = 'island';
-      if (config.theme && config.theme !== 'dark') {
-        islandEl.classList.add(`theme-${config.theme}`);
-      }
-      if (lastWeatherData !== null) {
-        renderWeather(lastWeatherData);
-      }
+      if (config.theme && config.theme !== 'dark') islandEl.classList.add(`theme-${config.theme}`);
+      if (wasExpanded) islandEl.classList.add('expanded');
+      if (lastWeatherData !== null) renderWeather(lastWeatherData);
     }
 
     function renderWeather(data) {
       if (!data) {
         weatherEl.innerHTML = '<div class="loading">--°</div>';
+        cityEl.textContent = '—';
+        feelsEl.textContent = '—';
+        humidityEl.textContent = '—';
+        windEl.textContent = '—';
         return;
       }
-      const icon = icons[data.category] || icons['clear'];
-      let temp = data.temp;
-      if (config.temperatureUnit === 'fahrenheit') {
-        temp = Math.round(temp * 9 / 5 + 32);
-      }
+
+      const key = iconKey(data.category, data.isDay ?? true);
+      const svg = icons[key] || icons['clear'];
+
       weatherEl.innerHTML = `
-        <div class="icon">${icon}</div>
-        <div class="temp">${temp}°</div>
+        <div class="icon icon-${key}">${svg}</div>
+        <div class="temp">${formatTemp(data.temp)}</div>
       `;
+
+      cityEl.textContent     = data.city || '—';
+      feelsEl.textContent    = data.feelsLike != null ? formatTemp(data.feelsLike) : '—';
+      humidityEl.textContent = data.humidity  != null ? `${data.humidity}%`        : '—';
+      windEl.textContent     = data.windSpeed != null ? `${data.windSpeed} km/h`   : '—';
     }
 
     async function updateWeather() {
@@ -124,6 +210,13 @@
       lastWeatherData = data;
       renderWeather(data);
     }
+
+    // ── Interactions ──────────────────────────────────────────────────────
+
+    document.getElementById('expand-btn').addEventListener('click', () => {
+      isExpanded = !isExpanded;
+      islandEl.classList.toggle('expanded', isExpanded);
+    });
 
     document.getElementById('settings-btn').addEventListener('click', () => {
       window.electron.showContextMenu();
@@ -137,6 +230,8 @@
     window.electron.onConfigChanged((newConfig) => {
       applyTheme(newConfig);
     });
+
+    // ── Init ──────────────────────────────────────────────────────────────
 
     (async () => {
       const initialConfig = await window.electron.getConfig();

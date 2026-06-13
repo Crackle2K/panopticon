@@ -22,14 +22,17 @@ Oasis is a lightweight Electron app that pins a sleek, pill-shaped weather widge
 
 ## Features
 
-- **Live weather** — fetches real-time temperature and conditions using your IP location (no API key required)
-- **6 themes** — Dark, Glass, Neon, Light, Nord, and Aurora; switchable at runtime via right-click
-- **Celsius / Fahrenheit** — toggle units from the right-click menu; preference is saved
+- **Live weather** — temperature, feels-like, humidity, and wind speed; fetched from your IP location with no API key
+- **Expandable details** — click ˅ to expand into a card showing city, feels-like, humidity, and wind; collapses back to a pill
+- **Day / night icons** — shows a crescent moon at night for clear skies, sun during the day
+- **Animated icons** — sun rays rotate, raindrops fall, snow drifts, lightning flickers, fog slides
+- **6 themes** — Dark, Glass, Neon, Light, Nord, Aurora; switchable live via gear icon or right-click
+- **Celsius / Fahrenheit** — toggle units; preference persisted between sessions
+- **Position persistence** — remembers where you dragged the island and restores it on next launch
+- **Launch at startup** — optional auto-start via the settings menu
 - **Always-on-top** — floats above all other windows without stealing focus
-- **Draggable** — reposition the island anywhere on screen by clicking and dragging
 - **Frameless & transparent** — only the pill is visible; no borders, no title bar
 - **Auto-refresh** — weather updates every 10 minutes automatically
-- **Zero config** — works out of the box; settings persist automatically between sessions
 
 ## Themes
 
@@ -76,11 +79,13 @@ npm run dev
 | Action | How |
 |--------|-----|
 | **Reposition** | Click and drag the island |
-| **Switch theme** | Click the ⚙ gear icon (right side) or right-click → Theme |
-| **Change unit** | Click the ⚙ gear icon (right side) or right-click → Temperature Unit |
-| **Quit** | Click the ⚙ gear icon (right side) or right-click → Quit Oasis |
+| **Expand / collapse** | Click the ˅ chevron (left side) |
+| **Switch theme** | ⚙ gear icon or right-click → Theme |
+| **Change unit** | ⚙ gear icon or right-click → Temperature Unit |
+| **Toggle startup** | ⚙ gear icon or right-click → Launch at Startup |
+| **Quit** | ⚙ gear icon or right-click → Quit Oasis |
 
-Settings (theme and temperature unit) are saved automatically to your system's app data folder and restored on every launch.
+All preferences — theme, temperature unit, window position — are saved automatically and restored on every launch.
 
 ## Configuration
 
@@ -93,7 +98,9 @@ You can edit this file directly while the app is not running:
 ```json
 {
   "theme": "dark",
-  "temperatureUnit": "celsius"
+  "temperatureUnit": "celsius",
+  "windowX": 960,
+  "windowY": 20
 }
 ```
 
@@ -101,23 +108,37 @@ You can edit this file directly while the app is not running:
 |-----|--------|---------|
 | `theme` | `dark` `glass` `neon` `light` `nord` `aurora` | `dark` |
 | `temperatureUnit` | `celsius` `fahrenheit` | `celsius` |
+| `windowX` | integer (pixels from left) | screen centre |
+| `windowY` | integer (pixels from top) | `20` |
 
 ## How It Works
 
 ```
 App launch
   └─ Reads config.json (or uses defaults)
-  └─ Renders transparent, frameless, always-on-top window
+  └─ Restores last window position (windowX / windowY)
+  └─ Renders transparent frameless always-on-top window (400 × 210 px)
 
 Weather fetch (on load + every 10 min)
-  ├─ ip-api.com  →  latitude / longitude
-  └─ open-meteo.com  →  temperature + WMO weather code
-        └─ mapped to: clear, partly-cloudy, cloudy, fog, rain, snow, thunderstorm
+  ├─ ip-api.com       →  lat, lon, city name
+  └─ open-meteo.com   →  temperature, apparent_temperature, weathercode,
+                          relativehumidity_2m, windspeed_10m, is_day
+        └─ weathercode mapped to: clear, partly-cloudy, cloudy, fog, rain, snow, thunderstorm
+        └─ is_day=0 + clear  →  night-clear (crescent moon icon)
 
-Right-click
+Expand / collapse (˅ button)
+  └─ CSS class toggle on .island  →  height 64px ↔ 185px
+  └─ pill border-radius ↔ rounded-rect border-radius (smooth transition)
+  └─ city, feels-like, humidity, wind fade in
+
+Settings (gear button or right-click)
   └─ Electron context menu
-        ├─ Theme change  →  CSS class on .island  +  saved to config.json
-        └─ Unit change   →  client-side conversion  +  saved to config.json
+        ├─ Theme         →  CSS class on .island  +  saved to config.json
+        ├─ Unit          →  client-side °C/°F conversion  +  saved to config.json
+        └─ Startup       →  app.setLoginItemSettings()
+
+Window move
+  └─ Saves new x, y to config.json automatically
 ```
 
 Both APIs are free and require no authentication.
