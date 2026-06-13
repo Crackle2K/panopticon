@@ -17,7 +17,7 @@ LICENSE text eol=lf
 
 # Linguist overrides — HTML is a renderer template, not the primary language
 *.html  linguist-detectable=false
-*.css   linguist-language=CSS
+*.css   linguist-detectable=false
 
 # Binary — do not diff or mangle
 *.png   binary
