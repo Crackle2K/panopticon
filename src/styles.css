@@ -17,11 +17,16 @@ body {
   background: transparent;
 }
 
+/* ── Base island ── */
 .island {
+  --text: #fff;
+  --muted: #555;
+
+  position: relative;
   width: 100%;
   height: 100%;
   background: #000;
-  border-radius: 50px;
+  border-radius: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -30,8 +35,93 @@ body {
   user-select: none;
   overflow: hidden;
   -webkit-app-region: drag;
+  transition: background 0.35s ease, box-shadow 0.35s ease, border-color 0.35s ease;
 }
 
+/* ── Gear / settings button ── */
+.settings-btn {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 6px;
+  cursor: pointer;
+  color: var(--text);
+  opacity: 0.35;
+  transition: opacity 0.2s ease;
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+}
+
+.settings-btn:hover {
+  opacity: 1;
+}
+
+.settings-btn svg {
+  width: 26px;
+  height: 26px;
+  display: block;
+}
+
+/* ── Glass ── */
+.island.theme-glass {
+  --text: #fff;
+  --muted: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+/* ── Neon ── */
+.island.theme-neon {
+  --text: #00f5ff;
+  --muted: #005f63;
+  background: #070b0d;
+  border: 1px solid rgba(0, 245, 255, 0.25);
+  box-shadow: 0 0 28px rgba(0, 245, 255, 0.12), inset 0 0 28px rgba(0, 245, 255, 0.03);
+}
+
+.island.theme-neon .temp {
+  text-shadow: 0 0 18px #00f5ff, 0 0 36px rgba(0, 245, 255, 0.45);
+}
+
+.island.theme-neon .icon svg {
+  filter: drop-shadow(0 0 6px rgba(0, 245, 255, 0.8));
+}
+
+/* ── Light ── */
+.island.theme-light {
+  --text: #1a1a1a;
+  --muted: #aaa;
+  background: #efefef;
+}
+
+.island.theme-light .icon svg {
+  filter: brightness(0);
+}
+
+/* ── Nord ── */
+.island.theme-nord {
+  --text: #eceff4;
+  --muted: #4c566a;
+  background: #2e3440;
+}
+
+/* ── Aurora ── */
+.island.theme-aurora {
+  --text: #fff;
+  --muted: rgba(255, 255, 255, 0.45);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+}
+
+/* ── Shared content ── */
 .weather {
   display: flex;
   flex-direction: row;
@@ -49,7 +139,7 @@ body {
 .temp {
   font-size: 110px;
   font-weight: 800;
-  color: #fff;
+  color: var(--text);
   line-height: 1;
   letter-spacing: -5px;
 }
@@ -57,6 +147,6 @@ body {
 .loading {
   font-size: 110px;
   font-weight: 800;
-  color: #555;
+  color: var(--muted);
   letter-spacing: -5px;
 }

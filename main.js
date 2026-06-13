@@ -1,7 +1,26 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 let mainWindow;
+
+function getConfigPath() {
+  return path.join(app.getPath('userData'), 'config.json');
+}
+
+function loadConfig() {
+  const defaults = { theme: 'dark', temperatureUnit: 'celsius' };
+  try {
+    const raw = fs.readFileSync(getConfigPath(), 'utf8');
+    return { ...defaults, ...JSON.parse(raw) };
+  } catch {
+    return defaults;
+  }
+}
+
+function saveConfig(config) {
+  fs.writeFileSync(getConfigPath(), JSON.stringify(config, null, 2));
+}
 
 function createWindow() {
   const { screen } = require('electron');
@@ -10,11 +29,11 @@ function createWindow() {
 
   mainWindow = new BrowserWindow({
     width: 400,
-    height: 50,
+    height: 64,
     minWidth: 400,
-    minHeight: 50,
+    minHeight: 64,
     maxWidth: 400,
-    maxHeight: 50,
+    maxHeight: 64,
     x: Math.floor(width / 2) - 250,
     y: 20,
     webPreferences: {
@@ -33,6 +52,73 @@ function createWindow() {
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
 }
 
+ipcMain.handle('get-config', () => loadConfig());
+
+ipcMain.handle('set-config', (_event, patch) => {
+  const config = { ...loadConfig(), ...patch };
+  saveConfig(config);
+  mainWindow.webContents.send('config-changed', config);
+  return config;
+});
+
+ipcMain.handle('show-context-menu', () => {
+  const config = loadConfig();
+
+  const themes = [
+    { id: 'dark',   label: 'Dark'   },
+    { id: 'glass',  label: 'Glass'  },
+    { id: 'neon',   label: 'Neon'   },
+    { id: 'light',  label: 'Light'  },
+    { id: 'nord',   label: 'Nord'   },
+    { id: 'aurora', label: 'Aurora' },
+  ];
+
+  const menu = Menu.buildFromTemplate([
+    {
+      label: 'Theme',
+      submenu: themes.map(({ id, label }) => ({
+        label,
+        type: 'radio',
+        checked: config.theme === id,
+        click: () => {
+          const updated = { ...config, theme: id };
+          saveConfig(updated);
+          mainWindow.webContents.send('config-changed', updated);
+        },
+      })),
+    },
+    {
+      label: 'Temperature Unit',
+      submenu: [
+        {
+          label: 'Celsius (°C)',
+          type: 'radio',
+          checked: config.temperatureUnit === 'celsius',
+          click: () => {
+            const updated = { ...config, temperatureUnit: 'celsius' };
+            saveConfig(updated);
+            mainWindow.webContents.send('config-changed', updated);
+          },
+        },
+        {
+          label: 'Fahrenheit (°F)',
+          type: 'radio',
+          checked: config.temperatureUnit === 'fahrenheit',
+          click: () => {
+            const updated = { ...config, temperatureUnit: 'fahrenheit' };
+            saveConfig(updated);
+            mainWindow.webContents.send('config-changed', updated);
+          },
+        },
+      ],
+    },
+    { type: 'separator' },
+    { label: 'Quit Oasis', click: () => app.quit() },
+  ]);
+
+  menu.popup({ window: mainWindow });
+});
+
 ipcMain.handle('get-weather', async () => {
   try {
     const fetch = (await import('node-fetch')).default;
@@ -42,7 +128,7 @@ ipcMain.handle('get-weather', async () => {
 
     if (geo.status !== 'success') return null;
 
-    const { lat, lon, city } = geo;
+    const { lat, lon } = geo;
 
     const weatherRes = await fetch(
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weathercode&temperature_unit=celsius`
@@ -51,7 +137,6 @@ ipcMain.handle('get-weather', async () => {
 
     const temp = Math.round(weather.current.temperature_2m);
     const code = weather.current.weathercode;
-
     const category = weatherCodeToCategory(code);
 
     return { temp, category };
