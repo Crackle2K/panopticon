@@ -15,6 +15,10 @@
 # Plain text
 LICENSE text eol=lf
 
+# Linguist overrides — HTML is a renderer template, not the primary language
+*.html  linguist-detectable=false
+*.css   linguist-language=CSS
+
 # Binary — do not diff or mangle
 *.png   binary
 *.jpg   binary
